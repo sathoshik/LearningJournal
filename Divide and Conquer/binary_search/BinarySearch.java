@@ -3,19 +3,35 @@ import java.util.*;
 
 public class BinarySearch {
 
-    static int binarySearch(int[] a, int x) {
-        int left = 0, right = a.length;
+    static int binarySearch(int[] a, int x, int left, int right) {
+        int middle = (left + right)/2;
+        int returnValue = -1;
+        
+        if( x > a[right] || x < a[left])
+        	return returnValue;
+        
+        if(a[middle] == x)
+        	return middle;
         //write your code here
 
-        return -1;
+        if(a[middle] > x){
+        	returnValue = binarySearch(a,x,left,middle);
+        
+        }
+        
+        if(a[middle] < x){
+        	returnValue =binarySearch(a,x,middle + 1,right);
+        	
+        }
+        return returnValue;
     }
 
-    static int linearSearch(int[] a, int x) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] == x) return i;
-        }
-        return -1;
-    }
+//    static int linearSearch(int[] a, int x) {
+//        for (int i = 0; i < a.length; i++) {
+//            if (a[i] == x) return i;
+//        }
+//        return -1;
+//    }
 
     public static void main(String[] args) {
         FastScanner scanner = new FastScanner(System.in);
@@ -31,7 +47,7 @@ public class BinarySearch {
         }
         for (int i = 0; i < m; i++) {
             //replace with the call to binarySearch when implemented
-            System.out.print(linearSearch(a, b[i]) + " ");
+            System.out.print(binarySearch(a, b[i],0,a.length - 1)+" ");
         }
     }
     static class FastScanner {
