@@ -12,7 +12,6 @@ public class BinarySearch {
         
         if(a[middle] == x)
         	return middle;
-        //write your code here
 
         if(a[middle] > x){
         	returnValue = binarySearch(a,x,left,middle);
@@ -26,12 +25,6 @@ public class BinarySearch {
         return returnValue;
     }
 
-//    static int linearSearch(int[] a, int x) {
-//        for (int i = 0; i < a.length; i++) {
-//            if (a[i] == x) return i;
-//        }
-//        return -1;
-//    }
 
     public static void main(String[] args) {
         FastScanner scanner = new FastScanner(System.in);
