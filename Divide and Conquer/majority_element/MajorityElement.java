@@ -2,29 +2,64 @@ import java.util.*;
 import java.io.*;
 
 public class MajorityElement {
-    private static int getMajorityElement(int[] a, int left, int right) {
-        if (left == right) {
-            return -1;
+	
+	static void printMajority(long a[], int size) 
+    {
+        /* Find the candidate for Majority*/
+        long cand = findCandidate(a, size);
+ 
+        /* Print the candidate if it is Majority*/
+        if (isMajority(a, size, cand))
+            System.out.println("1");
+        else
+            System.out.println("0");
+    }
+	
+	/* Function to find the candidate for Majority */
+    static long findCandidate(long a[], int size) 
+    {
+        int maj_index = 0, count = 1;
+        int i;
+        for (i = 1; i < size; i++) 
+        {
+            if (a[maj_index] == a[i])
+                count++;
+            else
+                count--;
+            if (count == 0)
+            {
+                maj_index = i;
+                count = 1;
+            }
         }
-        if (left + 1 == right) {
-            return a[left];
+        return a[maj_index];
+    }
+ 
+    /* Function to check if the candidate occurs more
+       than n/2 times */
+    static boolean isMajority(long a[], int size, long cand) 
+    {
+        int i, count = 0;
+        for (i = 0; i < size; i++) 
+        {
+            if (a[i] == cand)
+                count++;
         }
-        //write your code here
-        return -1;
+        if (count > size / 2) 
+            return true;
+        else
+            return false;
     }
 
     public static void main(String[] args) {
         FastScanner scanner = new FastScanner(System.in);
         int n = scanner.nextInt();
-        int[] a = new int[n];
+        long[] a = new long[n];
         for (int i = 0; i < n; i++) {
             a[i] = scanner.nextInt();
         }
-        if (getMajorityElement(a, 0, a.length) != -1) {
-            System.out.println(1);
-        } else {
-            System.out.println(0);
-        }
+       
+         printMajority(a,a.length);
     }
     static class FastScanner {
         BufferedReader br;
