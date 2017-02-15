@@ -161,12 +161,9 @@ bool DoubleHashTable<T >::remove( T const &obj ) {
       return false;
     }
 
-
-
   } else {
     return false;
   }
-
 }
 
 template<typename T >
@@ -176,16 +173,9 @@ void DoubleHashTable<T >::clear() {
   return ; 
 }
 
-template<typename T >
-void DoubleHashTable<T >::print() const {
-  // enter your implemetation here 	
-  return;
-}
-
 template<typename T>
 int DoubleHashTable<T >::hash( T const &obj, int i ) const{
   return (h1(obj) + (i*h2(obj)))%array_size;
 }
-
 
 #endif
