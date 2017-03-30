@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cmath>
 #include <iostream>
+#include "Exception.h"
+#include "Tester.h"
 #include "Weighted_graph.h"
 
 // Note some details may change.  For example, for ease of understanding, this uses %
@@ -13,7 +15,7 @@
 
 
 int main() {
-	int const LIMIT = 12;  // This number is subject to change
+	int const LIMIT = 10;  // This number is subject to change
 	int N = 8;
 
 	double sum = 0.0;

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <limits>
 #include <cstring>
+#include "Exception.h"
 
 using namespace std;
 
@@ -54,7 +55,8 @@ struct adjacentNode {
   vertex *reference;
 
   adjacentNode():
-      weight(0) {
+      weight(0),
+      next(nullptr){
       //nothing happens in the construct
       }
 
@@ -69,6 +71,7 @@ class Heap {
   private:
     int *array;
     int size;
+    int initialSize;
     vertex *vertices;
 
   public:
@@ -92,6 +95,7 @@ class Heap {
 
 Heap::Heap(int m, int s, vertex *graph):
   size(m),
+  initialSize(m),
   vertices(graph),
   array ( new int[m +1] ) {
  
@@ -112,8 +116,8 @@ Heap::Heap(int m, int s, vertex *graph):
       count ++;
     }
 
-    cout << "Finished Initializing new Heap" << endl;
-    print();
+    //cout << "Finished Initializing new Heap" << endl;
+    //print();
 }
 
 Heap::~Heap() {
@@ -121,11 +125,20 @@ Heap::~Heap() {
 }
 
 int Heap::left( int i ) const {
-  return 2*i;
+  
+  if ( 2*i > size + 1) {
+    return i;
+  } else {
+    return 2*i;
+  }
 }
 
 int Heap::right( int i ) const {
-  return 2*1 + 1;
+  if ((2*i +1 ) > size +1 ){
+    return i;
+  } else {
+    return 2*i + 1;
+  }
 }
 
 int Heap::parent( int i ) const {
@@ -147,14 +160,19 @@ int Heap::heapSize() const {
 
 void Heap::heapify( int i ) {
 
-  cout << "Starting to heapify " << endl;
-  print();
+  //cout << "Starting to heapify at " << i << endl;
+  //print();
   //heapify starting at index i
   int l = left(i);
+  //cout << "left index of i is " << l << endl;
   int r = right(i);
+  //cout << "right index of i is " << r << endl;
   int smallestIndex = 0;
 
   if ( l <= size && vertices[array[l]].depth < vertices[array[i]].depth ) {
+    //cout << "no seg fault smallest is (" << l << "," << i << ")" << endl;
+    //cout << "left depth " <<vertices[array[l]].depth << endl;
+    //cout << "i depth " << vertices[array[i]].depth << endl;
     smallestIndex = l;
   } else {
     smallestIndex = i;
@@ -162,15 +180,19 @@ void Heap::heapify( int i ) {
 
   if ( r <= size && vertices[array[r]].depth < vertices[array[smallestIndex]].depth ) {
     smallestIndex = r;
+    //cout << "no seg faul is (" << r << "," << i <<")" << endl;
+    //cout << "right depth " <<vertices[array[r]].depth << endl;
+    //cout << "i depth " << vertices[array[i]].depth << endl;
   }
 
   if (smallestIndex != i) {
     std::swap(array[i],array[smallestIndex]);
     vertices[array[smallestIndex]].heapIndex = smallestIndex;
     vertices[array[i]].heapIndex = i;
+    //cout << "no seg faul " << endl;
     heapify(smallestIndex);
   }
-
+  //cout << "finished heapifying at " << i << ". swapped " << i <<" with " << smallestIndex << ". heap size: " << size << endl;
   //finished heapifying
   return;
 
@@ -189,26 +211,26 @@ int Heap::extractMin() {
   array[1] = array[size];
   vertices[array[1]].heapIndex = 1;
   size --;
-  cout << "Extract min value of index of " << min << endl;
+  //cout << "Extract min value of index of " << min << endl;
   //call heapify on the first index.
   heapify(1);
 
-  cout << "After reorganizing heap from extracting min " << endl;
-  print();
+  //cout << "After reorganizing heap from extracting min " << endl;
+  //print();
 
   return min;
 }
 
 void Heap::modifyKey(int i) {
 
- cout << "parent of " << i << " is " << parent(i) << endl;
- cout << "left of "<< i <<" is " << left(i) << endl;
- cout << "right of " << i << " is " << right(i) << endl;
+ //cout << "parent of " << i << " is " << parent(i) << endl;
+ //cout << "left of "<< i <<" is " << left(i) << endl;
+ //cout << "right of " << i << " is " << right(i) << endl;
 
  if ( vertices[array[parent(i)]].depth >= vertices[array[i]].depth) {
-  cout << " Reference depth is >= depth of node currenlty comparing " << endl;
-  cout << "Upward fix " << endl;
-  print();
+  //cout << " Reference depth is >= depth of node currenlty comparing " << endl;
+  //cout << "Upward fix " << endl;
+  //print();
   while ( i > 1 && vertices[array[parent(i)]].depth > vertices[array[i]].depth ) {
     
 
@@ -219,12 +241,12 @@ void Heap::modifyKey(int i) {
     i = temp;
   }
 
-  cout << "End of upward fix " << endl;
-  print();
+  //cout << "End of upward fix " << endl;
+  //print();
 
  } else {
   
-   cout << "Downward fix " << endl;
+   //cout << "Downward fix " << endl;
    
    heapify(i);
  
@@ -243,7 +265,7 @@ void Heap::print() {
 
   cout << "Vertex Heap Index -> ";
 
-  for (int i = 0; i < 50; i++ ) {
+  for (int i = 0; i < initialSize; i++ ) {
     cout << " |" << i << "," <<  vertices[i].heapIndex;
   }
   cout << endl;
@@ -321,15 +343,20 @@ int Weighted_graph::edge_count() const {
 }
 
 double Weighted_graph::adjacent(int m, int n) const {
-  if ( m == n){
-      return 0;
-  }
-
-  if (m < 0 || m > verticesCount || n < 0 || n > verticesCount ) {
+ 
+  if (m < 0 || m >= verticesCount || n < 0 || n >= verticesCount ) {
     throw illegal_argument();
   }
 
-  return matrix[m][n].weight;
+  if ( m == n){
+      return 0;
+  }
+  
+  if (matrix[m][n].weight > 0 ) {
+    return matrix[m][n].weight;
+  } else {
+    return INF;
+  }
 }
 
 double Weighted_graph::shortestPath(int m, int n) const{
@@ -356,17 +383,21 @@ double Weighted_graph::shortestPath(int m, int n) const{
     adjacentNode *visitingNode = vertices[currentNodeIndex].adjacentList;
 
     while (visitingNode != nullptr ){
+      //cout << " there are more adjacent nodes " << endl;
       if(visitingNode -> reference -> heapIndex < 0) {
+        //cout <<  " negative " << endl;
         //If the heapIndex of the visiting Node is < 0, that means we have extracted it from the heap. Thus skip to next node
         visitingNode = visitingNode -> next;
         continue;
       }
-      cout << "Currently visiting node " << visitingNode -> reference - vertices;
-      cout << " with weight " << visitingNode -> weight << endl;
+      //cout << "Currently visiting node " << visitingNode -> reference - vertices;
+      //cout << " with weight " << visitingNode -> weight << endl;
+      //cout << "about to relax" << endl;
       relax(vertices[currentNodeIndex], visitingNode);
-      cout << "Finished relaxing. Weight have been updated " << endl;
+      //cout << "Finished relaxing. Weight have been updated " << endl;
       pq -> modifyKey(visitingNode -> reference -> heapIndex);
       visitingNode = visitingNode -> next;
+      //cout << "set next node" << endl;
     }
   }
 }
@@ -391,23 +422,27 @@ void Weighted_graph::insert(int m, int n, double w) {
     throw illegal_argument();
   }
 
-  if ( m < 0 || m > verticesCount || n < 0 || n > verticesCount ) {
+  if ( m == n ) {
+    throw illegal_argument();
+  }
+
+  if (m < 0 || m >= verticesCount || n < 0 || n >= verticesCount ) {
     throw illegal_argument();
   }
   //check if the edge exists already.
    if (matrix[m][n].weight > 0 ) {
     //edge between m and n exists
-   cout << "edge between " << m << " and " << n << " already exists" << endl;
+   //cout << "edge between " << m << " and " << n << " already exists" << endl;
    //If edge already exists, its same to assume that its already in the linked list.
    //simply update the weight between the two edges.
    matrix[m][n].weight = w;
    matrix[n][m].weight = w;
    
-   cout << "updated weights between " << m << " and " << n << endl;
+   //cout << "updated weights between " << m << " and " << n << endl;
   } else {
   
     if ( vertices[m].degree <=0 ) {
-      cout << "vertex " << m << " has no edges yet. Create new adjacency list" << endl;
+      //cout << "vertex " << m << " has no edges yet. Create new adjacency list" << endl;
       //m x n relationship
       vertices[m].adjacentList = &matrix[m][n];
       vertices[m].degree ++;
@@ -415,7 +450,7 @@ void Weighted_graph::insert(int m, int n, double w) {
       matrix[m][n].reference = &vertices[n]; // backwards reference.
       matrix[m][n].weight = w; //add weight between two edges
     } else {
-      cout << "vertex " << m << " has adjacencies. Insert edge into list" << endl;
+      //cout << "vertex " << m << " has adjacencies. Insert edge into list" << endl;
        // m x n relationship
       matrix[m][vertices[m].tailIndex].next = &matrix[m][n]; //add new edge to linked list
       vertices[m].degree ++;
@@ -425,7 +460,7 @@ void Weighted_graph::insert(int m, int n, double w) {
     }
 
     if (vertices[n].degree <= 0 ) {
-      cout << "vertex " << n << " has no edges yet. Create new adjacency list" << endl;
+      //cout << "vertex " << n << " has no edges yet. Create new adjacency list" << endl;
       //n x m relationship
       vertices[n].adjacentList = &matrix[n][m];
       vertices[n].degree ++;
@@ -433,30 +468,30 @@ void Weighted_graph::insert(int m, int n, double w) {
       matrix[n][m].reference = &vertices[m]; // backwards reference.
       matrix[n][m].weight = w;
     } else {
-      cout << "vertex " << n << " has adjacencies. Insert edge into list" << endl;
+      //cout << "vertex " << n << " has adjacencies. Insert edge into list" << endl;
       //n x m relationshop
-      cout << vertices[n].tailIndex << endl;
+      //cout << vertices[n].tailIndex << endl;
       matrix[n][vertices[n].tailIndex].next = &matrix[n][m]; //add new edge to linked list
       vertices[n].degree ++;
       vertices[n].tailIndex = m;
       matrix[n][m].reference = &vertices[m];
       matrix[n][m].weight = w;
     }
-      cout << "added new edge between " << m << " and " << n << endl;
+      //cout << "added new edge between " << m << " and " << n << endl;
       edges ++; 
   } 
 }
 
 void Weighted_graph::relax(vertex u, adjacentNode *v) const{
-
+  //cout << "relaxing " << endl;
   // if the depth of v is greater than the depth of u + weight,
   // update depth
-  cout << "current Node Depth = " << u.depth << " visiting node depth = " << v -> reference -> depth << endl;
+  //cout << "current Node Depth = " << u.depth << " visiting node depth = " << v -> reference -> depth << endl;
   if (( v -> reference -> depth) > (u.depth + v -> weight)) {
     v -> reference -> depth = (u.depth + v -> weight);
-    cout << "Update Weight to " <<  v -> reference -> depth << endl;
+    //cout << "Update Weight to " <<  v -> reference -> depth << endl;
   } else {
-    cout << "Keep weight the same at " << v -> reference -> depth << endl;
+    //cout << "Keep weight the same at " << v -> reference -> depth << endl;
   }
 
   return;
