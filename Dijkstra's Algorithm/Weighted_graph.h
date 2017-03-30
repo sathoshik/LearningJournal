@@ -159,42 +159,47 @@ int Heap::heapSize() const {
 }
 
 void Heap::heapify( int i ) {
+  
+  while (i <= size ) {
+    //cout << "Starting to heapify at " << i << endl;
+    //print();
+    //heapify starting at index i
+    int l = left(i);
+    //cout << "left index of i is " << l << endl;
+    int r = right(i);
+    //cout << "right index of i is " << r << endl;
+    int smallestIndex = 0;
+ 
+    if ( l <= size && vertices[array[l]].depth < vertices[array[i]].depth ) {
+      //cout << "no seg fault smallest is (" << l << "," << i << ")" << endl;
+      //cout << "left depth " <<vertices[array[l]].depth << endl;
+      //cout << "i depth " << vertices[array[i]].depth << endl;
+      smallestIndex = l;
+    } else {
+      smallestIndex = i;
+    }
 
-  //cout << "Starting to heapify at " << i << endl;
-  //print();
-  //heapify starting at index i
-  int l = left(i);
-  //cout << "left index of i is " << l << endl;
-  int r = right(i);
-  //cout << "right index of i is " << r << endl;
-  int smallestIndex = 0;
+    if ( r <= size && vertices[array[r]].depth < vertices[array[smallestIndex]].depth ) {
+      smallestIndex = r;
+      //cout << "no seg faul is (" << r << "," << i <<")" << endl;
+      //cout << "right depth " <<vertices[array[r]].depth << endl;
+      //cout << "i depth " << vertices[array[i]].depth << endl;
+    }
 
-  if ( l <= size && vertices[array[l]].depth < vertices[array[i]].depth ) {
-    //cout << "no seg fault smallest is (" << l << "," << i << ")" << endl;
-    //cout << "left depth " <<vertices[array[l]].depth << endl;
-    //cout << "i depth " << vertices[array[i]].depth << endl;
-    smallestIndex = l;
-  } else {
-    smallestIndex = i;
+    if (smallestIndex != i) {
+      std::swap(array[i],array[smallestIndex]);
+      vertices[array[smallestIndex]].heapIndex = smallestIndex;
+      vertices[array[i]].heapIndex = i;
+      //cout << "no seg faul " << endl;
+      i = smallestIndex;
+    } else {
+      break;
+    }
   }
-
-  if ( r <= size && vertices[array[r]].depth < vertices[array[smallestIndex]].depth ) {
-    smallestIndex = r;
-    //cout << "no seg faul is (" << r << "," << i <<")" << endl;
-    //cout << "right depth " <<vertices[array[r]].depth << endl;
-    //cout << "i depth " << vertices[array[i]].depth << endl;
-  }
-
-  if (smallestIndex != i) {
-    std::swap(array[i],array[smallestIndex]);
-    vertices[array[smallestIndex]].heapIndex = smallestIndex;
-    vertices[array[i]].heapIndex = i;
-    //cout << "no seg faul " << endl;
-    heapify(smallestIndex);
-  }
+/*
   //cout << "finished heapifying at " << i << ". swapped " << i <<" with " << smallestIndex << ". heap size: " << size << endl;
   //finished heapifying
-  return;
+  return; */
 
 }
 
