@@ -22,17 +22,10 @@
 
 using namespace std;
 
-enum state {
-  WHITE,
-  GRAY,
-  BLACK
-};
-
 struct vertex;
 struct adjacentNode;
 
 struct vertex {
-  state color; // visited, currently visiting or have yet to visit
   double depth;
   adjacentNode *adjacentList;
   int degree;
@@ -52,7 +45,6 @@ struct vertex {
 struct adjacentNode {
   adjacentNode *next;
   double weight;
-  vertex *reference;
 
   adjacentNode():
       weight(0),
@@ -82,6 +74,7 @@ class Heap {
     int parent( int ) const;
     int heapSize() const;
 
+    void insert( int );
     bool isEmpty() const;
     void heapify( int );
     int extractMin();
@@ -94,7 +87,7 @@ class Heap {
 
 
 Heap::Heap(int m, int s, vertex *graph):
-  size(m),
+  size(1), //always create a heap of size 1 initially
   initialSize(m),
   vertices(graph),
   array ( new int[m +1] ) {
@@ -102,22 +95,6 @@ Heap::Heap(int m, int s, vertex *graph):
     array[0] = 0;
     array[1] = s;
     vertices[s].heapIndex = 1;
-
-    //initialize heap array with starting node at top of heap. everything else infinity
-    int count = 0;
-    for (int i = 2; i < size + 1; i ++ ) {
-      
-      if ( count == s) {
-        count++;
-      }
-
-      array[i] = count;
-      vertices[count].heapIndex = i;
-      count ++;
-    }
-
-    //cout << "Finished Initializing new Heap" << endl;
-    //print();
 }
 
 Heap::~Heap() {
@@ -151,7 +128,7 @@ int Heap::parent( int i ) const {
 
 bool Heap::isEmpty() const {
   //heap actually starts at index 1. This anything below the size of 2 is useless.
-  return !(size > 1);
+  return !(size >= 1);
 }
 
 int Heap::heapSize() const {
@@ -159,7 +136,6 @@ int Heap::heapSize() const {
 }
 
 void Heap::heapify( int i ) {
-  
   while (i <= size ) {
     //cout << "Starting to heapify at " << i << endl;
     //print();
@@ -196,6 +172,8 @@ void Heap::heapify( int i ) {
       break;
     }
   }
+  
+
 /*
   //cout << "finished heapifying at " << i << ". swapped " << i <<" with " << smallestIndex << ". heap size: " << size << endl;
   //finished heapifying
@@ -252,10 +230,33 @@ void Heap::modifyKey(int i) {
  } else {
   
    //cout << "Downward fix " << endl;
-   
+   //int start_s = clock(); 
    heapify(i);
+   //int stop_s = clock();
+   //cout << "dfix: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << endl;
+
  
  }
+}
+
+void Heap::insert(int node) {
+
+  if ( size >= initialSize ) {
+    throw overflow();
+  }
+
+  size ++;
+  int i = size;
+  
+  while ( i > 1 && vertices[array[parent(i)]].depth > vertices[node].depth ) {
+    array[i] = array[parent(i)];
+    vertices[array[i]].heapIndex = i; //update heapIndex
+    i = parent(i);
+  }
+
+  array[i] = node; //insert node into the heap.
+  vertices[node].heapIndex = i; //update the heapIndex on the vertex
+
 }
 
 void Heap::print() {
@@ -289,6 +290,8 @@ class Weighted_graph {
     int edges;
     vertex *vertices;
     adjacentNode **matrix;
+    int perviousIndex;
+    heap *pq;
 
 		static const double INF;
 
@@ -302,7 +305,7 @@ class Weighted_graph {
 		double distance( int, int ) const;
 
 		void insert( int, int, double );
-    void relax(vertex, adjacentNode *) const;
+    void relax(vertex, adjacentNode *, int) const;
     void print() const; // TODO
 
     //TODO test method for shortestDistance
@@ -321,6 +324,8 @@ std::ostream &operator<<( std::ostream &out, Weighted_graph const &graph ) {
 Weighted_graph::Weighted_graph(int n):
   verticesCount(std::max(1,n)),
   edges(0),
+  pq(nullptr),
+  previousIndex(-1),
   vertices( new vertex[verticesCount]),
   matrix( new adjacentNode*[verticesCount]) {
     //initialize the matrix of pointers
@@ -366,15 +371,20 @@ double Weighted_graph::adjacent(int m, int n) const {
 
 double Weighted_graph::shortestPath(int m, int n) const{
 
+    
+  //initialize New Heap.
+  if ( previousIndex == -1 || previousIndex != m) {
+    //if the previous index that you searched is different, create a new heap.
   for (int i = 0; i < verticesCount; i++) {
     //Initialize the depth all vertices to INF 
     vertices[i].depth = INF; 
+    vertices[i].heapIndex = -5;
   }
 
   vertices[m].depth = 0;
-  
-  //initialize New Heap. 
-  Heap *pq = new Heap(verticesCount,m, vertices);
+
+    pq = new Heap(verticesCount,m, vertices);
+  }
 
   while (!(pq -> isEmpty())) {
 
@@ -382,29 +392,47 @@ double Weighted_graph::shortestPath(int m, int n) const{
 
     if (currentNodeIndex == n) {
       delete pq; //cleanup heap that was created.
+      //cout <<"about to return " << endl;
       return vertices[currentNodeIndex].depth;
     }
 
     adjacentNode *visitingNode = vertices[currentNodeIndex].adjacentList;
 
     while (visitingNode != nullptr ){
-      //cout << " there are more adjacent nodes " << endl;
-      if(visitingNode -> reference -> heapIndex < 0) {
-        //cout <<  " negative " << endl;
-        //If the heapIndex of the visiting Node is < 0, that means we have extracted it from the heap. Thus skip to next node
-        visitingNode = visitingNode -> next;
-        continue;
+     // cout << "Visiting new adjacent node" << endl;
+       
+      if (vertices[visitingNode - matrix[currentNodeIndex]].heapIndex == -1) {
+          //cout <<  "We have finished visiting this node. negative " << endl;
+          //If the heapIndex of the visiting Node is < 0, that means we have extracted it from the heap. Thus skip to next node
+          visitingNode = visitingNode -> next;
+          continue;
+        }
+
+      if (vertices[visitingNode - matrix[currentNodeIndex]].heapIndex == -5 ) {
+        //have not yet been discovered.
+        //insert into the que
+        //cout << "This node has not been discovered yet. node : " << visitingNode -> reference - vertices << endl;
+        relax(vertices[currentNodeIndex], visitingNode, currentNodeIndex);
+        pq -> insert(visitingNode - matrix[currentNodeIndex]);
+
+        //cout << "Finished Inserting node to que. " << endl;
+      } else {
+        //cout << " there are more adjacent nodes " << endl;
+        //cout << "Currently visiting node " << visitingNode -> reference - vertices;
+        //cout << " with weight " << visitingNode -> weight << endl;
+        //cout << "about to relax" << endl;
+        relax(vertices[currentNodeIndex], visitingNode, currentNodeIndex);
+        //cout << "Finished relaxing. Weight have been updated " << endl;
+        pq -> modifyKey(vertices[visitingNode - matrix[currentNodeIndex]].heapIndex);
+        //cout << "set next node" << endl;
+
       }
-      //cout << "Currently visiting node " << visitingNode -> reference - vertices;
-      //cout << " with weight " << visitingNode -> weight << endl;
-      //cout << "about to relax" << endl;
-      relax(vertices[currentNodeIndex], visitingNode);
-      //cout << "Finished relaxing. Weight have been updated " << endl;
-      pq -> modifyKey(visitingNode -> reference -> heapIndex);
-      visitingNode = visitingNode -> next;
-      //cout << "set next node" << endl;
+        visitingNode = visitingNode -> next;
     }
   }
+  //cleanup the heap
+  delete pq;
+  return INF;
 }
 
 double Weighted_graph::distance( int m, int n) const{
@@ -417,6 +445,10 @@ double Weighted_graph::distance( int m, int n) const{
     return 0.0;
   }
 
+  if ( vertices[m].degree <=0 || vertices[n].degree <= 0) {
+    return INF;
+  }
+
   //implement distance algorithm.
   return shortestPath(m,n);
  
@@ -425,9 +457,7 @@ double Weighted_graph::distance( int m, int n) const{
 void Weighted_graph::insert(int m, int n, double w) {
   if (w <= 0 ) {
     throw illegal_argument();
-  }
-
-  if ( m == n ) {
+  } if ( m == n ) {
     throw illegal_argument();
   }
 
@@ -452,7 +482,6 @@ void Weighted_graph::insert(int m, int n, double w) {
       vertices[m].adjacentList = &matrix[m][n];
       vertices[m].degree ++;
       vertices[m].tailIndex = n;
-      matrix[m][n].reference = &vertices[n]; // backwards reference.
       matrix[m][n].weight = w; //add weight between two edges
     } else {
       //cout << "vertex " << m << " has adjacencies. Insert edge into list" << endl;
@@ -460,7 +489,6 @@ void Weighted_graph::insert(int m, int n, double w) {
       matrix[m][vertices[m].tailIndex].next = &matrix[m][n]; //add new edge to linked list
       vertices[m].degree ++;
       vertices[m].tailIndex = n;
-      matrix[m][n].reference = &vertices[n];
       matrix[m][n].weight = w;
     }
 
@@ -470,7 +498,6 @@ void Weighted_graph::insert(int m, int n, double w) {
       vertices[n].adjacentList = &matrix[n][m];
       vertices[n].degree ++;
       vertices[n].tailIndex = m;
-      matrix[n][m].reference = &vertices[m]; // backwards reference.
       matrix[n][m].weight = w;
     } else {
       //cout << "vertex " << n << " has adjacencies. Insert edge into list" << endl;
@@ -479,7 +506,6 @@ void Weighted_graph::insert(int m, int n, double w) {
       matrix[n][vertices[n].tailIndex].next = &matrix[n][m]; //add new edge to linked list
       vertices[n].degree ++;
       vertices[n].tailIndex = m;
-      matrix[n][m].reference = &vertices[m];
       matrix[n][m].weight = w;
     }
       //cout << "added new edge between " << m << " and " << n << endl;
@@ -487,18 +513,8 @@ void Weighted_graph::insert(int m, int n, double w) {
   } 
 }
 
-void Weighted_graph::relax(vertex u, adjacentNode *v) const{
-  //cout << "relaxing " << endl;
-  // if the depth of v is greater than the depth of u + weight,
-  // update depth
-  //cout << "current Node Depth = " << u.depth << " visiting node depth = " << v -> reference -> depth << endl;
-  if (( v -> reference -> depth) > (u.depth + v -> weight)) {
-    v -> reference -> depth = (u.depth + v -> weight);
-    //cout << "Update Weight to " <<  v -> reference -> depth << endl;
-  } else {
-    //cout << "Keep weight the same at " << v -> reference -> depth << endl;
-  }
-
+void Weighted_graph::relax(vertex u, adjacentNode *v, int currentNodeIndex) const{
+  vertices[v - matrix[currentNodeIndex]].depth = std::min((u.depth + v -> weight),( vertices[v - matrix[currentNodeIndex]].depth));
   return;
 }
 
