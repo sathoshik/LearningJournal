@@ -73,6 +73,7 @@ class Heap {
     int right( int ) const;
     int parent( int ) const;
     int heapSize() const;
+    int top() const;
 
     void insert( int );
     bool isEmpty() const;
@@ -133,6 +134,16 @@ bool Heap::isEmpty() const {
 
 int Heap::heapSize() const {
   return size;
+}
+
+int Heap::top() const{
+  
+  if (isEmpty()) {
+    throw underflow();
+  }
+
+  return array[1];
+
 }
 
 void Heap::heapify( int i ) {
@@ -394,17 +405,16 @@ double Weighted_graph::shortestPath(int m, int n) {
   }
   while (!(pq -> isEmpty())) {
     
-    int currentNodeIndex = pq -> extractMin();
-    //cout << "node " << currentNodeIndex << endl;
+    int peakCurrentNodeIndex = pq -> top();
 
-    if (currentNodeIndex == n) {
-      vertices[currentNodeIndex].heapIndex = -1;
+    if (peakCurrentNodeIndex == n) {
       //delete pq; //cleanup heap that was created.
       //cout <<"about to return " << endl;
       //insert node back in to maintain the heap.
-      pq -> insert(currentNodeIndex);
-      return vertices[currentNodeIndex].depth;
+      return vertices[peakCurrentNodeIndex].depth;
     }
+
+    int currentNodeIndex = pq -> extractMin();
 
     adjacentNode *visitingNode = vertices[currentNodeIndex].adjacentList;
 
