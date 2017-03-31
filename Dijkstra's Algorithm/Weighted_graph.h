@@ -182,7 +182,7 @@ void Heap::heapify( int i ) {
 }
 
 int Heap::extractMin() {
-  
+  //print(); 
   if (isEmpty()){
     throw underflow();
   }
@@ -197,7 +197,7 @@ int Heap::extractMin() {
   //cout << "Extract min value of index of " << min << endl;
   //call heapify on the first index.
   heapify(1);
-
+  //print();
   //cout << "After reorganizing heap from extracting min " << endl;
   //print();
 
@@ -290,8 +290,8 @@ class Weighted_graph {
     int edges;
     vertex *vertices;
     adjacentNode **matrix;
-    int perviousIndex;
-    heap *pq;
+    int previousIndex;
+    Heap *pq;
 
 		static const double INF;
 
@@ -302,14 +302,14 @@ class Weighted_graph {
 		int degree( int ) const;
 		int edge_count() const;
 		double adjacent( int, int ) const;
-		double distance( int, int ) const;
+		double distance( int, int ) ;
 
 		void insert( int, int, double );
     void relax(vertex, adjacentNode *, int) const;
     void print() const; // TODO
 
     //TODO test method for shortestDistance
-    double shortestPath(int, int) const;
+    double shortestPath(int, int) ;
 	// Friends
 
 	friend std::ostream &operator<<( std::ostream &, Weighted_graph const & );
@@ -342,6 +342,7 @@ Weighted_graph::~Weighted_graph() {
 
   delete[] matrix;
   delete[] vertices;
+  delete pq;
 }
 
 int Weighted_graph::degree(int n) const {
@@ -369,30 +370,39 @@ double Weighted_graph::adjacent(int m, int n) const {
   }
 }
 
-double Weighted_graph::shortestPath(int m, int n) const{
-
+double Weighted_graph::shortestPath(int m, int n) {
     
   //initialize New Heap.
   if ( previousIndex == -1 || previousIndex != m) {
+    //cout << "new starting " << endl;
     //if the previous index that you searched is different, create a new heap.
-  for (int i = 0; i < verticesCount; i++) {
-    //Initialize the depth all vertices to INF 
-    vertices[i].depth = INF; 
-    vertices[i].heapIndex = -5;
-  }
+    for (int i = 0; i < verticesCount; i++) {
+      //Initialize the depth all vertices to INF 
+      vertices[i].depth = INF; 
+      vertices[i].heapIndex = -5;
+    }
 
-  vertices[m].depth = 0;
-
+    vertices[m].depth = 0;
+    previousIndex = m;
+    
+    //clean up any garbage heap
+    delete pq;
     pq = new Heap(verticesCount,m, vertices);
+  } else if ( vertices[n].heapIndex == -1 ) {
+    //cout << "already exists " << endl;
+    return vertices[n].depth;
   }
-
   while (!(pq -> isEmpty())) {
-
+    
     int currentNodeIndex = pq -> extractMin();
+    //cout << "node " << currentNodeIndex << endl;
 
     if (currentNodeIndex == n) {
-      delete pq; //cleanup heap that was created.
+      vertices[currentNodeIndex].heapIndex = -1;
+      //delete pq; //cleanup heap that was created.
       //cout <<"about to return " << endl;
+      //insert node back in to maintain the heap.
+      pq -> insert(currentNodeIndex);
       return vertices[currentNodeIndex].depth;
     }
 
@@ -431,11 +441,10 @@ double Weighted_graph::shortestPath(int m, int n) const{
     }
   }
   //cleanup the heap
-  delete pq;
   return INF;
 }
 
-double Weighted_graph::distance( int m, int n) const{
+double Weighted_graph::distance( int m, int n){
   
   if (m < 0 || m > verticesCount || n < 0 || n > verticesCount ) {
     throw illegal_argument();
@@ -455,6 +464,9 @@ double Weighted_graph::distance( int m, int n) const{
 }
 
 void Weighted_graph::insert(int m, int n, double w) {
+  //if new insert is made, reset the pq.
+  previousIndex = -1;
+
   if (w <= 0 ) {
     throw illegal_argument();
   } if ( m == n ) {
